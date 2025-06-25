@@ -1,18 +1,31 @@
-import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import {PageLayout} from "@/components/layout";
 
-export default function Page(){
-    return <PageLayout>
-        <Card>
-            <CardHeader>
-                <CardTitle>Realisation</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-                <Link href="/realisations/real1" className="text-blue-500">Première Real</Link>
-                <Link href="/realisations/real2" className="text-blue-500">Seconde Real</Link>
-                <Link href="/realisations/real3" className="text-blue-500">Troisieme Real</Link>
-            </CardContent>
-        </Card>
-    </PageLayout>
+export default async function Page() {
+    const articles = await prisma.article.findMany();
+
+    return (
+        <>
+            <Button asChild>
+                <Link href="/">HOME</Link>
+            </Button>
+            <div className="grid gap-6 mt-4">
+                {articles.map((article) => (
+                    <Card key={article.id}>
+                        <CardHeader>
+                            <CardTitle>{article.title}</CardTitle>
+                            <CardDescription>
+                                {article.createdAt.toLocaleDateString()}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <p>{article.description}</p>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+        </>
+    );
 }
