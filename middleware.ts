@@ -1,13 +1,14 @@
-import { withAuth } from 'next-auth/middleware'
+// middleware.ts
+import { withAuth } from "next-auth/middleware";
 
 export default withAuth({
     callbacks: {
         authorized: ({ token }) => {
-            return !!token
+            return token?.role === "ADMIN";
         },
     },
-})
+});
 
 export const config = {
-    matcher: ['/admin/:path*'],
-}
+    matcher: ["/admin/:path*"],
+};

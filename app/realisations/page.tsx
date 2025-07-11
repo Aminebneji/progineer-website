@@ -1,6 +1,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
 
+//TODO gros bg je sais que c'était que pour tester ta DB mais là faut que tu fasse en sorte de créer une page dédiée pour ces pauvres articles
+// et bien entendu remplacer la data et l'affichage ici pour les realisations a voir avec le Marv
 export default async function Page() {
     const articles = await prisma.article.findMany();
 
