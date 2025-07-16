@@ -1,11 +1,9 @@
-import Link from "next/link";
+import TopSection from "@/components/home/top-section";
 import {PageLayout} from "@/components/layout";
-import {Button} from "@/components/ui/button";
 
 export default function Home() {
   return (
-      <PageLayout>
-<h1>progineer website</h1>
-      </PageLayout>
+    // TODO: il est utile ton Layout ? remet toi en question gamin
+        <TopSection/>
   );
 }

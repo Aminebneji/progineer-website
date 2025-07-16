@@ -32,12 +32,15 @@ function ListItem({title, children, href, ...props}: React.ComponentPropsWithout
     );
 }
 
+//TODO: faut rentre plus stylé la navbar, gérer une sorte de fondu de couleur pour laisser passer les éléments a travers au scroll c'est plus stylé 
+
 export default function Navbar() {
     const { data: session } = useSession();
     const isAdmin = session?.user?.role === "ADMIN";
 
     return (
-        <div className="flex justify-between items-center w-full px-4 py-2 border-b">
+        <div className="flex justify-between items-center px-4 py-2 fixed top-0 left-0 w-full z-50
+         bg-white/100 dark:bg-black/100 backdrop-blur-md border-b border-white/30 dark:border-white/10">
             <NavigationMenu>
                 <NavigationMenuList className="flex items-center gap-4">
                     <NavigationMenuItem>

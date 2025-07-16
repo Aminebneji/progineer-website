@@ -1,116 +1,126 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Article } from "@prisma/client";
 import { Button } from "@/components/ui/button";
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import {Article} from "@prisma/client";
-
-//TODO créer une modale pour l'update
-// voir pour créer une page à part pour la création ou une modale a partir d'un bouton " + "
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { GenericTable } from "@/components/common/genericTable";
+import { ModalForm } from "@/components/common/modalForm";
+import { FieldType } from "@/types/formTypes";
 
 export default function ArticlesAdmin() {
-    const [articles, setArticles] = useState<Article[]>([]);
-    const [title, setTitle] = useState("");
-    const [description, setDescription] = useState("");
-    const [content, setContent] = useState("");
-    const [image, setImage] = useState("");
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingArticle, setEditingArticle] = useState<Article | null>(null);
 
-    useEffect(() => {
-        const fetchArticles = async () => {
-            try {
-                const res = await fetch("/api/articles");
-                const data = await res.json();
-                setArticles(data);
-            } catch (error) {
-                console.error("Erreur lors du fetch des articles :", error);
-            }
-        };
+const fields = [
+  { name: "title", label: "Titre", type: FieldType.Text },
+  { name: "description", label: "Description", type: FieldType.Textarea },
+  { name: "content", label: "Contenu", type: FieldType.Textarea },
+  { name: "imageUrl", label: "Image", type: FieldType.Image },
+];
 
-        void fetchArticles();
-    }, []);
+    const columns = [
+    { key: "title" as const, label: "Titre" },
+    { key: "description" as const, label: "Description" },
+    { key: "createdAt" as const, label: "Créé le" },
+    { key: "content" as const, label: "Contenu" },
+    { key: "imageUrl" as const, label: "Image URL" },
+  ];
+ 
 
-
-
-    const createArticle = async () => {
-        const response = await fetch("/api/articles", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ title, description, content, image }),
-        });
-
-        if (response.ok) {
-            const newArticle = await response.json();
-            setArticles([newArticle, ...articles]);
-            setTitle("");
-            setDescription("");
-            setContent("");
-            setImage("");
-        }
+  useEffect(() => {
+    const fetchArticles = async () => {
+      try {
+        const response = await fetch("/api/articles");
+        const data = await response.json();
+        setArticles(data);
+      } catch (error) {
+        console.error("Erreur lors du fetch des articles :", error);
+      }
     };
 
-    const deleteArticle = async (id: string) => {
-        const res = await fetch(`/api/articles/${id}`, {
-            method: "DELETE",
-        });
+    void fetchArticles();
+  }, []);
 
-        if (res.ok) {
-            setArticles(articles.filter((a) => a.id !== id));
+ const handleSave = async (form: Record<string, string>) => {
+  const isEditing = Boolean(editingArticle);
+  const url = isEditing ? `/api/articles/${editingArticle!.id}` : "/api/articles";
+  const method = isEditing ? "PUT" : "POST";
+
+  const response = await fetch(url, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(form),
+  });
+
+  if (!response.ok) return;
+
+  const article = await response.json();
+
+  setArticles((prev) =>
+    isEditing ? prev.map((a) => (a.id === article.id ? article : a)) : [article, ...prev]
+  );
+
+  setModalOpen(false);
+  setEditingArticle(null);
+};
+
+  const handleDelete = async (article: Article) => {
+    const response = await fetch(`/api/articles/${article.id}`, {
+      method: "DELETE",
+    });
+
+    if (response.ok) {
+      setArticles((prev) => prev.filter((a) => a.id !== article.id));
+    }
+  };
+
+  const openCreateModal = () => {
+    setEditingArticle(null);
+    setModalOpen(true);
+  };
+
+  const openEditModal = (article: Article) => {
+    setEditingArticle(article);
+    setModalOpen(true);
+  };
+
+  return (
+    <div className="space-y-8">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Articles</CardTitle>
+          <Button className="h-12 w-12 rounded-full font-bold text-xl" onClick={openCreateModal}>+</Button>
+        </CardHeader>
+        <CardContent>
+          <GenericTable
+            data={articles}
+            columns={columns}
+            onEdit={openEditModal}
+            onDelete={handleDelete}
+          />
+        </CardContent>
+      </Card>
+
+      <ModalForm
+        title={editingArticle ? "Modifier l'article" : "Créer un article"}
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSave={handleSave}
+        fields={fields}
+        uploadType="article"
+        initialData={
+          editingArticle
+            ? {
+                title: editingArticle.title,
+                description: editingArticle.description,
+                content: editingArticle.content,
+                image: editingArticle.imageUrl ?? "",
+              }
+            : undefined
         }
-    };
-
-    return (
-            <div className="space-y-8">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Créer un article</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <Input placeholder="Titre" value={title} onChange={(event) => setTitle(event.target.value)} />
-                        <Textarea placeholder="Description" value={description} onChange={(event) => setDescription(event.target.value)} />
-                        <Textarea placeholder="Contenu" value={content} onChange={(event) => setContent(event.target.value)} />
-                        <Input placeholder="URL de l'image" value={image} onChange={(event) => setImage(event.target.value)} />
-                        <Button onClick={createArticle} disabled={!title || !description || !content}>Créer</Button>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Liste des articles</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Titre</TableHead>
-                                    <TableHead>Description</TableHead>
-                                    <TableHead>Créé le</TableHead>
-                                    <TableHead>Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {articles.map((article) => (
-                                    <TableRow key={article.id}>
-                                        <TableCell className="font-medium">{article.title}</TableCell>
-                                        <TableCell>{article.description}</TableCell>
-                                        <TableCell>{new Date(article.createdAt).toLocaleDateString()}</TableCell>
-                                        <TableCell>
-                                            <Button
-                                                variant="destructive"
-                                                size="sm"
-                                                onClick={() => deleteArticle(article.id)}
-                                            >
-                                                Supprimer
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
-            </div>
-    );
+      />
+    </div>
+  );
 }
