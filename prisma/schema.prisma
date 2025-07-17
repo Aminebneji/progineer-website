@@ -73,13 +73,46 @@ model Article {
   imageUrl    String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime? @updatedAt
+
+  seoTitle        String @default("Article - Progineer")
+  seoDescription  String @db.Text @default("Description - Progineer")
+  seoKeywords     String[]   // Ex: ["Energie", "DTU", "PACA"]
+  seoImage        String?    // Image pour og:image, etc.
 }
 
-// Realisations
 model Realisation {
-  id          String   @id @default(cuid())
-  title       String
-  description String   @db.Text
-  imageUrl    String?
-  createdAt   DateTime @default(now())
+  id            String     @id @default(cuid())
+  title         String
+  description   String     @db.Text
+  localisation  String?
+  imageUrl      String?
+  prestationId  String
+  prestation    Prestation @relation(fields: [prestationId], references: [id])
+  createdAt     DateTime   @default(now())
+
+  seoTitle        String   @default("Article - Progineer")
+  seoDescription  String     @db.Text @default("Description - Progineer")
+  seoKeywords     String[]   // Ex: ["rénovation", "construction", "marseille"]
+  seoImage        String?    // Image pour og:image, etc.
+}
+
+model Prestation {
+  id              String     @id @default(cuid())
+  slug            String     @unique
+  title           String
+  categorie       String     @unique // Ex: "Rénovation", "Construction", "Aménagement intérieur"
+  description     String     @db.Text
+  imageUrl        String?
+  icon            String
+  services        String[]
+  published       Boolean    @default(false)
+  order           Int?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime?  @updatedAt
+  realisations    Realisation[]
+
+  seoTitle        String
+  seoDescription  String     @db.Text
+  seoKeywords     String[]   // Ex: ["rénovation", "construction", "marseille"]
+  seoImage        String?    // Image pour og:image, etc.
 }

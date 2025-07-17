@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/theme-toggle";
 
-function ListItem({title, children, href, ...props}: React.ComponentPropsWithoutRef<"li"> & { href: string }) {
+function ListItem({ title, children, href, ...props }: React.ComponentPropsWithoutRef<"li"> & { href: string }) {
     return (
         <li {...props}>
             <NavigationMenuLink asChild>
@@ -66,12 +66,15 @@ export default function Navbar() {
                                 Admin
                             </NavigationMenuTrigger>
                             <NavigationMenuContent>
-                                <ul className="grid gap-2 w-[300px] p-4">
+                                <ul className="grid gap-2 w-[300px] p-4 ">
                                     <ListItem title="Articles" href="/admin/articles">
                                         Gérer et modifier les articles du site.
                                     </ListItem>
                                     <ListItem title="Realisations" href="/admin/realisations">
                                         Gérer et modifier les realisation présentes sur le site.
+                                    </ListItem>
+                                    <ListItem title="Prestations" href="/admin/prestations">
+                                        Gérer et modifier les Prestations présentes sur le site.
                                     </ListItem>
                                 </ul>
                             </NavigationMenuContent>

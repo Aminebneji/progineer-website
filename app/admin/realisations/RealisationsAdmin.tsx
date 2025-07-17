@@ -8,32 +8,73 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ModalForm } from "@/components/common/modalForm";
 import { FieldType } from "@/types/formTypes";
 
-// TODO: Ajouter un field Localisation pour les Realisations, modifier tout le reste en conséquence.
+type RealisationWithPrestation = Realisation & {
+  prestation?: {
+    id: string;
+    categorie: string;
+  };
+};
+type RealisationWithFormatted = RealisationWithPrestation & { createdAtFormatted: string, prestationFormatted: string };
 
 export default function RealisationsAdmin() {
-  const [realisations, setRealisations] = useState<Realisation[]>([]);
+  const [realisations, setRealisations] = useState<RealisationWithFormatted[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingRealisation, setEditingRealisation] = useState<Realisation | null>(null);
+  const [editingRealisation, setEditingRealisation] = useState<RealisationWithPrestation | null>(null);
+  const [prestations, setPrestations] = useState<{ id: string; categorie: string }[]>([]);
 
   const fields = [
     { name: "title", label: "Titre", type: FieldType.Text },
     { name: "description", label: "Description", type: FieldType.Textarea },
     { name: "imageUrl", label: "Image", type: FieldType.Image },
+    { name: "localisation", label: "Localisation", type: FieldType.Text },
+    prestations.length > 0
+      ? {
+        name: "prestation",
+        label: "Prestation",
+        type: FieldType.Select,
+        options: prestations.map((p) => ({ label: p.categorie, value: p.categorie })),
+      } : {
+        name: "prestation",
+        label: "Prestation (chargement... ou texte libre)",
+        type: FieldType.Text,
+      },
+    { name: "seoTitle", label: "Titre SEO", type: FieldType.Text },
+    { name: "seoDescription", label: "Description SEO", type: FieldType.Textarea },
+    { name: "seoKeywords", label: "Mots-clés SEO (séparés par des virgules)", type: FieldType.Textarea },
   ];
 
   const columns = [
     { key: "title" as const, label: "Titre" },
     { key: "description" as const, label: "Description" },
-    { key: "createdAt" as const, label: "Créé le" },
-    { key: "imageUrl" as const, label: "Image" },
+    { key: "localisation" as const, label: "Localisation" },
+    { key: "prestationFormatted" as const, label: "Prestation" },
+    { key: "seoTitle" as const, label: "Titre SEO" },
+    { key: "seoKeywords" as const, label: "Mots-clés SEO" },
+    { key: "createdAtFormatted" as const, label: "Créé le" },
   ];
+
+  useEffect(() => {
+    const fetchPrestations = async () => {
+      const response = await fetch("/api/prestations");
+      const data = await response.json();
+      setPrestations(data);
+    };
+
+    fetchPrestations();
+  }, []);
 
   useEffect(() => {
     const fetchRealisations = async () => {
       try {
         const response = await fetch("/api/realisations");
         const data = await response.json();
-        setRealisations(data);
+        const formattedRealisation = data.map((realisations: RealisationWithPrestation) => ({
+          ...realisations,
+          createdAtFormatted: new Date(realisations.createdAt).toLocaleDateString("fr-FR"),
+          prestationFormatted: realisations.prestation?.categorie.toString() ?? "",
+        }));
+
+        setRealisations(formattedRealisation);
       } catch (error) {
         console.error("Erreur lors du fetch des réalisations :", error);
       }
@@ -42,31 +83,39 @@ export default function RealisationsAdmin() {
     void fetchRealisations();
   }, []);
 
- const handleSave = async (form: Record<string, string>) => {
-  const isEditing = Boolean(editingRealisation);
-  const url = isEditing ? `/api/realisations/${editingRealisation!.id}` : "/api/realisations";
-  const method = isEditing ? "PUT" : "POST";
+  const handleSave = async (form: Record<string, string>) => {
+    const isEditing = Boolean(editingRealisation);
+    const url = isEditing ? `/api/realisations/${editingRealisation!.id}` : "/api/realisations";
+    const method = isEditing ? "PUT" : "POST";
 
-  const response = await fetch(url, {
-    method,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(form),
-  });
+    const preparedForm = {
+      ...form,
+      seoKeywords: Array.isArray(form.seoKeywords) ? form.seoKeywords :
+        typeof form.seoKeywords === "string" ? form.seoKeywords.split(",").map((kw) => kw.trim()) :
+          [],
+    };
 
-  if (!response.ok) return;
+    const response = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(preparedForm),
+    });
 
-  const realisation = await response.json();
+    if (!response.ok) return;
 
-  setRealisations((prev) =>
-    isEditing ? prev.map((r) => (r.id === realisation.id ? realisation : r)) : [realisation, ...prev]
-  );
+    const realisation = await response.json();
 
-  setModalOpen(false);
-  setEditingRealisation(null);
-};
+    setRealisations((prev) =>
+      isEditing
+        ? prev.map((r) => (r.id === realisation.id ? realisation : r))
+        : [realisation, ...prev]
+    );
 
+    setModalOpen(false);
+    setEditingRealisation(null);
+  };
 
-  const handleDelete = async (realisation: Realisation) => {
+  const handleDelete = async (realisation: RealisationWithPrestation) => {
     const response = await fetch(`/api/realisations/${realisation.id}`, {
       method: "DELETE",
     });
@@ -81,7 +130,7 @@ export default function RealisationsAdmin() {
     setModalOpen(true);
   };
 
-  const openEditModal = (realisation: Realisation) => {
+  const openEditModal = (realisation: RealisationWithPrestation) => {
     setEditingRealisation(realisation);
     setModalOpen(true);
   };
@@ -91,7 +140,9 @@ export default function RealisationsAdmin() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Réalisations</CardTitle>
-          <Button className="h-12 w-12 rounded-full font-bold text-xl" onClick={openCreateModal}>+</Button>
+          <Button className="h-12 w-12 rounded-full font-bold text-xl" onClick={openCreateModal}>
+            +
+          </Button>
         </CardHeader>
         <CardContent>
           <GenericTable
@@ -106,17 +157,25 @@ export default function RealisationsAdmin() {
       <ModalForm
         title={editingRealisation ? "Modifier la réalisation" : "Créer une réalisation"}
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => {
+          setModalOpen(false)
+        }}
         onSave={handleSave}
         fields={fields}
         uploadType="realisation"
         initialData={
           editingRealisation
             ? {
-                title: editingRealisation.title,
-                description: editingRealisation.description,
-                image: editingRealisation.imageUrl ?? "",
-              } : undefined
+              title: editingRealisation.title,
+              description: editingRealisation.description,
+              imageUrl: editingRealisation.imageUrl ?? "",
+              localisation: editingRealisation.localisation ?? "",
+              prestation: editingRealisation.prestation?.categorie ?? "",
+              seoTitle: editingRealisation.seoTitle,
+              seoDescription: editingRealisation.seoDescription,
+              seoKeywords: editingRealisation.seoKeywords?.join(", ") ?? "",
+            }
+            : undefined
         }
       />
     </div>

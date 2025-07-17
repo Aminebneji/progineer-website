@@ -1,17 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-
-export type FieldType = "text" | "textarea" | "image";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { generateSlug } from "@/lib/utils";
+import { FieldType } from "@/types/formTypes";
 
 type Field = {
   name: string;
   label: string;
   type: FieldType;
+  options?: { label: string; value: string }[];
 };
 
 type Props = {
@@ -21,7 +28,7 @@ type Props = {
   onSave: (data: Record<string, string>) => void;
   fields: Field[];
   initialData?: Record<string, string>;
-  uploadType?: "article" | "realisation";
+  uploadType?: "article" | "realisation" | "prestation";
 };
 
 export function ModalForm({ title, open, onClose, onSave, fields, initialData, uploadType }: Props) {
@@ -30,13 +37,25 @@ export function ModalForm({ title, open, onClose, onSave, fields, initialData, u
   useEffect(() => {
     const initialState: Record<string, string> = {};
     fields.forEach((field) => {
-      initialState[field.name] = initialData?.[field.name] || "";
+      initialState[field.name] = initialData?.[field.name] ?? "";
     });
     setForm(initialState);
   }, [initialData, fields]);
 
   const handleChange = (name: string, value: string) => {
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => {
+      const updated = { ...prev, [name]: value };
+
+      if (
+        name === "title" &&
+        "slug" in prev &&
+        (!prev.slug || prev.slug === generateSlug(prev.title))
+      ) {
+        updated.slug = generateSlug(value);
+      }
+
+      return updated;
+    });
   };
 
   const handleSubmit = () => {
@@ -49,19 +68,19 @@ export function ModalForm({ title, open, onClose, onSave, fields, initialData, u
     formData.append("file", file);
 
     if (uploadType) {
-    formData.append("type", uploadType); 
+      formData.append("type", uploadType);
 
-    const res = await fetch("/api/upload", {
-      method: "POST",
-      body: formData,
-    });
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
 
-    if (res.ok) {
-      const { url } = await res.json();
-      handleChange("imageUrl", url); 
+      if (res.ok) {
+        const { url } = await res.json();
+        handleChange("imageUrl", url);
+      }
     }
   };
-}
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -72,44 +91,79 @@ export function ModalForm({ title, open, onClose, onSave, fields, initialData, u
         <div className="space-y-4 py-2">
           {fields.map((field) => (
             <div key={field.name} className="space-y-2">
-              {(field.type === "text" || field.type === "textarea") && (
-                <>
-                  {field.type === "text" ? (
-                    <Input
-                      placeholder={field.label}
-                      value={form[field.name]}
-                      onChange={(e) => handleChange(field.name, e.target.value)}
-                    />
-                  ) : (
-                  <Textarea
-                    placeholder={field.label}
-                    value={form[field.name]}
-                    onChange={(e) => handleChange(field.name, e.target.value)}
-                    className="h-32 resize-none whitespace-pre-wrap"/>
-                  )}
-                </>
+              {field.type === "text" && (
+                <Input
+                  placeholder={field.label}
+                  value={form[field.name] ?? ""}
+                  onChange={(e) => handleChange(field.name, e.target.value)}
+                />
+              )}
+
+              {field.type === "textarea" && (
+                <Textarea
+                  placeholder={field.label}
+                  value={form[field.name] ?? ""}
+                  onChange={(e) => handleChange(field.name, e.target.value)}
+                  className="h-32 resize-none whitespace-pre-wrap"
+                />
               )}
 
               {field.type === "image" && (
                 <div className="space-y-2">
-                  {/* URL externe */}
                   <Input
                     placeholder="URL de l’image"
-                    value={form[field.name] || ""}
+                    value={form[field.name] ?? ""}
                     onChange={(e) => handleChange("imageUrl", e.target.value)}
                     type="url"
                   />
-
-                  {/* Upload */}
                   <Input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => {
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                       const file = e.target.files?.[0];
                       if (file) handleImageUpload(file);
                     }}
                   />
                 </div>
+              )}
+
+              {field.type === "number" && (
+                <Input
+                  type="number"
+                  placeholder={field.label}
+                  value={form[field.name] ?? ""}
+                  onChange={(e) => handleChange(field.name, e.target.value)}
+                />
+              )}
+
+              {field.type === "checkbox" && (
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={form[field.name] === "true"}
+                    onChange={(e) =>
+                      handleChange(field.name, e.target.checked.toString())
+                    }
+                  />
+                  <label>{field.label}</label>
+                </div>
+              )}
+              {field.type === "select" && field.options && (
+                <Select
+                  value={form[field.name] ?? ""}
+                  onValueChange={(value) => handleChange(field.name, value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={field.label} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {field.options.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
             </div>
           ))}

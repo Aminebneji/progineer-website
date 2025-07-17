@@ -8,33 +8,46 @@ import { GenericTable } from "@/components/common/genericTable";
 import { ModalForm } from "@/components/common/modalForm";
 import { FieldType } from "@/types/formTypes";
 
+type ArticleWithFormattedDate = Article & { createdAtFormatted: string };
+
+
 export default function ArticlesAdmin() {
-  const [articles, setArticles] = useState<Article[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingArticle, setEditingArticle] = useState<Article | null>(null);
+  const [articles, setArticles] = useState<ArticleWithFormattedDate[]>([]);
 
-const fields = [
-  { name: "title", label: "Titre", type: FieldType.Text },
-  { name: "description", label: "Description", type: FieldType.Textarea },
-  { name: "content", label: "Contenu", type: FieldType.Textarea },
-  { name: "imageUrl", label: "Image", type: FieldType.Image },
-];
+  const fields = [
+    { name: "title", label: "Titre", type: FieldType.Text },
+    { name: "description", label: "Description", type: FieldType.Textarea },
+    { name: "content", label: "Contenu", type: FieldType.Textarea },
+    { name: "seoTitle", label: "Titre SEO", type: FieldType.Text },
+    { name: "seoDescription", label: "Description SEO", type: FieldType.Textarea },
+    { name: "seoKeywords", label: "Mots-clés SEO", type: FieldType.Textarea },
+    { name: "seoImage", label: "Image SEO", type: FieldType.Image },
+  ];
 
-    const columns = [
+  const columns = [
     { key: "title" as const, label: "Titre" },
     { key: "description" as const, label: "Description" },
-    { key: "createdAt" as const, label: "Créé le" },
+    { key: "createdAtFormatted" as const, label: "Créé le" },
     { key: "content" as const, label: "Contenu" },
-    { key: "imageUrl" as const, label: "Image URL" },
+    { key: "seoTitle" as const, label: "Titre SEO" },
+    { key: "seoDescription" as const, label: "Description SEO" },
+    { key: "seoKeywords" as const, label: "Mots-clés SEO" },
   ];
- 
+
 
   useEffect(() => {
     const fetchArticles = async () => {
       try {
         const response = await fetch("/api/articles");
-        const data = await response.json();
-        setArticles(data);
+        const data: Article[] = await response.json();
+        const formattedArticles = data.map(article => ({
+          ...article,
+          createdAtFormatted: new Date(article.createdAt).toLocaleDateString("fr-FR"),
+        }));
+
+        setArticles(formattedArticles);
       } catch (error) {
         console.error("Erreur lors du fetch des articles :", error);
       }
@@ -43,28 +56,33 @@ const fields = [
     void fetchArticles();
   }, []);
 
- const handleSave = async (form: Record<string, string>) => {
-  const isEditing = Boolean(editingArticle);
-  const url = isEditing ? `/api/articles/${editingArticle!.id}` : "/api/articles";
-  const method = isEditing ? "PUT" : "POST";
 
-  const response = await fetch(url, {
-    method,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(form),
-  });
+  const handleSave = async (form: Record<string, string>) => {
+    const isEditing = Boolean(editingArticle);
+    const url = isEditing ? `/api/articles/${editingArticle!.id}` : "/api/articles";
+    const method = isEditing ? "PUT" : "POST";
+    const preparedForm = {
+      ...form,
+      seoKeywords: form.seoKeywords?.split(",").map((kw) => kw.trim()) ?? [],
+    };
 
-  if (!response.ok) return;
+    const response = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(preparedForm),
+    });
 
-  const article = await response.json();
+    if (!response.ok) return;
 
-  setArticles((prev) =>
-    isEditing ? prev.map((a) => (a.id === article.id ? article : a)) : [article, ...prev]
-  );
+    const article = await response.json();
 
-  setModalOpen(false);
-  setEditingArticle(null);
-};
+    setArticles((prev) =>
+      isEditing ? prev.map((a) => (a.id === article.id ? article : a)) : [article, ...prev]
+    );
+
+    setModalOpen(false);
+    setEditingArticle(null);
+  };
 
   const handleDelete = async (article: Article) => {
     const response = await fetch(`/api/articles/${article.id}`, {
@@ -113,13 +131,17 @@ const fields = [
         initialData={
           editingArticle
             ? {
-                title: editingArticle.title,
-                description: editingArticle.description,
-                content: editingArticle.content,
-                image: editingArticle.imageUrl ?? "",
-              }
+              title: editingArticle.title,
+              description: editingArticle.description,
+              content: editingArticle.content,
+              image: editingArticle.imageUrl ?? "",
+              seoTitle: editingArticle.seoTitle,
+              seoDescription: editingArticle.seoDescription,
+              seoKeywords: editingArticle.seoKeywords?.join(", ") ?? "",
+            }
             : undefined
         }
+
       />
     </div>
   );

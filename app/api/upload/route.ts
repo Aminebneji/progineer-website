@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
 
   const validations = [
     { valid: !!file && file.type?.startsWith("image"), error: "Fichier invalide (image attendue)" },
-    { valid: ["article", "realisation"].includes(type), error: "Type de fichier non pris en charge" },
+    { valid: ["article", "realisation", "prestation"].includes(type), error: "Type de fichier non pris en charge" },
     { valid: !file?.size || file.size <= 5 * 1024 * 1024, error: "Fichier trop lourd (max 5MB)" },
   ];
 
