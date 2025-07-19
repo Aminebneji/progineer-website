@@ -8,6 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ModalForm } from "@/components/common/modalForm";
 import { FieldType } from "@/types/formTypes";
 
+
+//TODO: oublie pas de te servir des params que t'as mis dans ton schema pour le SEO bg, tu verras c'est simple. 
+// toutes tes entités ont a peut pres les mêmes champs, donc tu peux faire un truc générique pour le SEO,
+
+
 type RealisationWithPrestation = Realisation & {
   prestation?: {
     id: string;

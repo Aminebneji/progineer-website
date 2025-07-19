@@ -33,6 +33,7 @@ function ListItem({ title, children, href, ...props }: React.ComponentPropsWitho
 }
 
 //TODO: faut rentre plus stylé la navbar, gérer une sorte de fondu de couleur pour laisser passer les éléments a travers au scroll c'est plus stylé 
+// Demande au Marv ou a Mael l'icone ( au pire y'a le repo de up)
 
 export default function Navbar() {
     const { data: session } = useSession();

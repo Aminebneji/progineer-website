@@ -1,28 +1,11 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { prisma } from "@/lib/prisma";
+import RealisationPage from "./realisationPage";
 
-//TODO gros bg je sais que c'était que pour tester ta DB mais là faut que tu fasse en sorte de créer une page dédiée pour ces pauvres articles
-// et bien entendu remplacer la data et l'affichage ici pour les realisations a voir avec le Marv
-export default async function Page() {
-    const articles = await prisma.article.findMany();
+export default function realisationPage() {
 
     return (
         <>
-            <div className="grid gap-6 mt-4">
-                {articles.map((article) => (
-                    <Card key={article.id}>
-                        <CardHeader>
-                            <CardTitle>{article.title}</CardTitle>
-                            <CardDescription>
-                                {article.createdAt.toLocaleDateString()}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <p>{article.description}</p>
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
+            <h1 className="text-2xl font-bold mb-4">Realisations</h1>
+            <RealisationPage />
         </>
     );
 }

@@ -96,6 +96,8 @@ model Realisation {
   seoImage        String?    // Image pour og:image, etc.
 }
 
+
+//TODO: ajouter des couleurs, une liste de couleurs qui ne peuvent être utilisés que pour un type de prestation
 model Prestation {
   id              String     @id @default(cuid())
   slug            String     @unique
