@@ -5,6 +5,7 @@ export enum FieldType {
   Checkbox = "checkbox",
   Number = "number",
   Select = "select",
+  Password = "password",
 }
 
 export type Field = {

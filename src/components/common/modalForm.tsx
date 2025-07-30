@@ -28,7 +28,7 @@ type Props = {
   onSave: (data: Record<string, string>) => void;
   fields: Field[];
   initialData?: Record<string, string>;
-  uploadType?: "article" | "realisation" | "prestation";
+  uploadType?: "article" | "realisation" | "prestation" | "user";
 };
 
 export function ModalForm({ title, open, onClose, onSave, fields, initialData, uploadType }: Props) {

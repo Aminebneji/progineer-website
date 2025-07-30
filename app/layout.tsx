@@ -2,11 +2,12 @@
 
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import {cn} from '@/lib/utils'
-import {Toaster} from "sonner";
-import {ThemeProvider} from "@/components/theme-provider";
+import { cn } from '@/lib/utils'
+import { Toaster } from "sonner";
+import { ThemeProvider } from "@/components/theme-provider";
 import { SessionProvider } from "next-auth/react";
-import Navbar from "@/components/common/navbar";
+import Navbar from "@/components/common/navbar/navbar";
+import ResponsiveNavbar from "@/components/common/navbar/responsiveNavbar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,18 +31,18 @@ export default function RootLayout({
       <body
         className={cn(geistSans.variable, geistMono.variable, "antialiased", "h-full")}
       >
-      <SessionProvider>
-      <ThemeProvider
+        <SessionProvider>
+          <ThemeProvider
             attribute="class"
             defaultTheme="system"
             enableSystem
             disableTransitionOnChange
-        >
-           <Navbar/>
+          >
+            <ResponsiveNavbar />
             {children}
-      <Toaster/>
-        </ThemeProvider>
-          </SessionProvider>
+            <Toaster />
+          </ThemeProvider>
+        </SessionProvider>
       </body>
     </html>
   );
